@@ -4,6 +4,7 @@ Digital Educational Resource Library (DERL)
 """
 from pathlib import Path
 from datetime import timedelta
+import os
 from decouple import config
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -11,10 +12,10 @@ from decouple import config
 # ─────────────────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY')
-DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+SECRET_KEY = config('SECRET_KEY', default='unsafe-secret-key')
+DEBUG = config('DEBUG', default=False, cast=bool)
 
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 # ─────────────────────────────────────────────────────────────────────────────
 # APPLICATIONS
 # ─────────────────────────────────────────────────────────────────────────────
