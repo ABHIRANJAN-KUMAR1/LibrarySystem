@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',          # Must be first
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -57,7 +58,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR.parent / 'frontend' / 'dist'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -77,15 +78,35 @@ ASGI_APPLICATION = 'config.asgi.application'
 # DATABASE — PostgreSQL
 # ─────────────────────────────────────────────────────────────────────────────
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT', default='5432'),
-    }
+    'default': config(
+        'DATABASE_URL',
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+        cast=lambda v: {
+            'ENGINE': 'django.db.backends.postgresql' if v.startswith('postgres') else 'django.db.backends.sqlite3',
+            'NAME': v.split('/')[-1] if not v.startswith('sqlite') else str(BASE_DIR / 'db.sqlite3'),
+            'USER': v.split('://')[1].split(':')[0] if '@' in v else '',
+            'PASSWORD': v.split(':')[2].split('@')[0] if '@' in v else '',
+            'HOST': v.split('@')[1].split(':')[0] if '@' in v else 'localhost',
+            'PORT': v.split(':')[-1].split('/')[0] if '@' in v and ':' in v.split('@')[1] else '',
+        } if '://' in v else {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='psad'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default='Abhi$1234'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5433'),
+        }
+    )
 }
+
+# Simplified database config for PythonAnywhere (overridable via .env)
+if config('USE_SQLITE', default=False, cast=bool):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CUSTOM USER MODEL
@@ -118,6 +139,13 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+STATICFILES_DIRS = [
+    BASE_DIR.parent / 'frontend' / 'dist',
+]
+
+# WhiteNoise storage
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
